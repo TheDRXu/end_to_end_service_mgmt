@@ -236,26 +236,29 @@ class ChatMessage(BaseModel):
 
 SYSTEM_PROMPT = """
 You are a friendly automotive service booking assistant.
-You will collect the following details from the user, one at a time, like filling in a form:
-1. Name
-2. Phone
-3. Email
-4. Service issue (what needs fixing)
-5. Date (YYYY-MM-DD)
-6. Start time (HH:MM)
-7. End time (HH:MM)
-8. Address
-9. Latitude
-10. Longitude
+
+Collect these fields (exact keys) for the booking:
+- name
+- phone
+- email
+- issue
+- date  (YYYY-MM-DD)
+- start (HH:MM, 24h)
+- end   (HH:MM, 24h)
+- address
+- lat   (number)
+- lon   (number)
 
 Rules:
-- Ask only one missing field at a time.
-- If the user provides multiple fields at once, accept them and then ask for the next missing field.
-- Always confirm the collected value before moving on.
-- When all fields are collected, your final message must start with exactly: BOOK_READY <JSON>. No other text or formatting is allowed before BOOK_READY.
-- Do NOT make up any data — wait for the user to provide it.
-- Keep responses short and friendly.
+- If the user provides ALL fields in one message, IMMEDIATELY output:
 
+BOOK_READY
+{"name":"...", "phone":"...", "email":"...", "issue":"...", "date":"YYYY-MM-DD", "start":"HH:MM", "end":"HH:MM", "address":"...", "lat":25.04, "lon":121.55}
+
+- NO extra text before BOOK_READY.
+- NO markdown/code fences.
+- If some fields are missing, ask for exactly ONE missing field at a time, confirm it, and continue.
+- Never invent values. Keep replies short.
 """
 
 def all_fields_present(data: Dict[str, Any]) -> bool:
@@ -288,16 +291,29 @@ def chatbot_llm(msg: ChatMessage):
     }
 
     # If booking complete
-    if "BOOK_READY" in reply:
+    if reply.strip().startswith("BOOK_READY"):
         try:
-            json_str = re.search(r"\{.*\}", reply, re.S).group()
-            data = json.loads(json_str)
+            # non-greedy JSON capture; guard if missing
+            m = re.search(r"\{.*?\}", reply, re.S)
+            if not m:
+                raise ValueError("No JSON object found after BOOK_READY")
+
+            data = json.loads(m.group())
+
+            # Normalize common variants we've already seen
+            if "service_issue" in data and "issue" not in data:
+                data["issue"] = data["service_issue"]
+            if "latitude" in data and "lat" not in data:
+                data["lat"] = data["latitude"]
+            if "longitude" in data and "lon" not in data:
+                data["lon"] = data["longitude"]
+
             sessions[sid]["data"].update(data)
 
             if all_fields_present(sessions[sid]["data"]):
                 b = sessions[sid]["data"]
 
-                # Call your existing /book endpoint
+                # Build payload exactly as /book expects
                 payload = {
                     "name": b["name"],
                     "phone": b["phone"],
@@ -311,20 +327,41 @@ def chatbot_llm(msg: ChatMessage):
                     "lon": float(b["lon"])
                 }
 
-                r = requests.post(f"{API_BOOK_URL}", json=payload, timeout=5)
+                # Single POST to /book
+                url = (API_BOOK_URL or "http://127.0.0.1:8000/book").rstrip("/")
+                r = requests.post(url, json=payload, timeout=10)
+
+                # Capture body for debugging before raising
+                raw_text = r.text
+                status = r.status_code
                 r.raise_for_status()
-                booking_resp = r.json()
+
+                try:
+                    booking_resp = r.json()
+                except ValueError:
+                    print(f"[chatbot_llm] /book returned non-JSON (status {status}): {raw_text}")
+                    raise
+
+                job_id = booking_resp.get("jobId")
+                tech_id = booking_resp.get("assignedTechId")
+                if not job_id or not tech_id:
+                    print(f"[chatbot_llm] /book JSON missing fields: {booking_resp}")
+                    raise RuntimeError("Missing jobId or assignedTechId in /book response")
 
                 sessions.pop(sid, None)
                 return {
-                    "reply": f"✅ Booking confirmed! Job ID: {booking_resp['jobId']} — Assigned to {booking_resp['assignedTechId']}",
+                    "reply": f"✅ Booking confirmed! Job ID: {job_id} — Assigned to {tech_id}",
                     "tokens": token_info
                 }
+            else:
+                # Not all fields present; just continue the conversation
+                return {"reply": reply, "tokens": token_info}
 
-        except Exception as e:
-            reply += f"\n\n(⚠ Error parsing booking info: {e})"
+        except Exception as http_err:
+            # Do NOT re-raise blindly; surface the error and keep the convo alive
+            print(f"[chatbot_llm] POST /book failed: {http_err}")
+            reply += f"\n\n(⚠ Booking failed: {http_err})"
+            return {"reply": reply, "tokens": token_info}
 
-
-
+    # Default: not ready yet, return the assistant message
     return {"reply": reply, "tokens": token_info}
-

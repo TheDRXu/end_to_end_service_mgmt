@@ -136,17 +136,18 @@
     try{
       const base = API(); if(!base) return alert('Set API URL first.');
       const body = {
-        name:  name.value.trim(),
-        phone: phone.value.trim(),
-        email: email.value.trim(),
-        issue: issue.value.trim(),
-        date:  date.value.trim(),
-        start: start.value.trim(),
-        end:   end.value.trim(),
-        address: address.value.trim(),
-        lat:   parseFloat(lat.value.trim()),
-        lon:   parseFloat(lon.value.trim())
+        name:  document.getElementById('name')?.value.trim() || '',
+        phone: document.getElementById('phone')?.value.trim() || '',
+        email: document.getElementById('email')?.value.trim() || '',
+        issue: document.getElementById('issue')?.value.trim() || '',
+        date:  document.getElementById('date')?.value.trim() || '',
+        start: document.getElementById('start')?.value.trim() || '',
+        end:   document.getElementById('end')?.value.trim() || '',
+        address: document.getElementById('address')?.value.trim() || '',
+        lat:   parseFloat(document.getElementById('lat')?.value.trim() || '0'),
+        lon:   parseFloat(document.getElementById('lon')?.value.trim() || '0')
       };
+
       const resp = await fetch(`${base}/book`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
       const data = await resp.json();
       bookOut.textContent = j(data);

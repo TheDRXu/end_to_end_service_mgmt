@@ -11,6 +11,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Any
 import json
 from decimal import Decimal
+from dotenv import load_dotenv
+import os
+import re
+load_dotenv()
+
+DDB_TABLE = os.getenv("DDB_TABLE")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 import requests
 API_BOOK_URL = os.environ.get("API_BOOK_URL", "http://localhost:8000/book")
@@ -221,7 +228,6 @@ USER QUESTION:
 
     return {"answer": answer}
 
-
 sessions = {}
 
 class ChatMessage(BaseModel):
@@ -246,14 +252,14 @@ Rules:
 - Ask only one missing field at a time.
 - If the user provides multiple fields at once, accept them and then ask for the next missing field.
 - Always confirm the collected value before moving on.
-- Once all fields are collected, show the full summary in JSON and say: BOOK_READY <JSON>.
+- When all fields are collected, your final message must start with exactly: BOOK_READY <JSON>. No other text or formatting is allowed before BOOK_READY.
 - Do NOT make up any data — wait for the user to provide it.
 - Keep responses short and friendly.
+
 """
 
-
-def all_fields_present(data):
-    required = ["name","phone","email","issue","date","start","end","address","lat","lon"]
+def all_fields_present(data: Dict[str, Any]) -> bool:
+    required = ["name", "phone", "email", "issue", "date", "start", "end", "address", "lat", "lon"]
     return all(k in data and data[k] for k in required)
 
 @app.post("/chatbot_llm")
@@ -275,31 +281,50 @@ def chatbot_llm(msg: ChatMessage):
     reply = resp.choices[0].message.content
     sessions[sid]["history"].append({"role": "assistant", "content": reply})
 
-    # Token usage info
     token_info = {
         "prompt_tokens": resp.usage.prompt_tokens,
         "completion_tokens": resp.usage.completion_tokens,
         "total_tokens": resp.usage.total_tokens
     }
 
-    # Try to extract structured data if present in reply
+    # If booking complete
     if "BOOK_READY" in reply:
-        import json, re
         try:
             json_str = re.search(r"\{.*\}", reply, re.S).group()
             data = json.loads(json_str)
             sessions[sid]["data"].update(data)
 
             if all_fields_present(sessions[sid]["data"]):
-                # Send booking request
-                r = requests.post(API_BOOK_URL, json=sessions[sid]["data"])
+                b = sessions[sid]["data"]
+
+                # Call your existing /book endpoint
+                payload = {
+                    "name": b["name"],
+                    "phone": b["phone"],
+                    "email": b["email"],
+                    "issue": b["issue"],
+                    "date": b["date"],
+                    "start": b["start"],
+                    "end": b["end"],
+                    "address": b["address"],
+                    "lat": float(b["lat"]),
+                    "lon": float(b["lon"])
+                }
+
+                r = requests.post(f"{API_BOOK_URL}", json=payload, timeout=5)
+                r.raise_for_status()
                 booking_resp = r.json()
-                sessions.pop(sid)
+
+                sessions.pop(sid, None)
                 return {
-                    "reply": f"✅ Booking confirmed! Your job ID is {booking_resp.get('jobId')}",
+                    "reply": f"✅ Booking confirmed! Job ID: {booking_resp['jobId']} — Assigned to {booking_resp['assignedTechId']}",
                     "tokens": token_info
                 }
+
         except Exception as e:
             reply += f"\n\n(⚠ Error parsing booking info: {e})"
 
+
+
     return {"reply": reply, "tokens": token_info}
+

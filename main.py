@@ -1,104 +1,53 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any, TypedDict
-from decimal import Decimal
-import boto3, os, json, uuid
-from datetime import datetime
-from langgraph.graph import StateGraph, END
-from openai import OpenAI
+# main.py
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Any
-import json
+from pydantic import BaseModel
+from typing import List, Optional, Dict, Any
 from decimal import Decimal
+from datetime import datetime
 from dotenv import load_dotenv
-import os
-import re
+import boto3, os, uuid, json, re, requests
+
+from openai import OpenAI
+from graph import build_booking_graph, BookingState
+
 load_dotenv()
 
+# ----- ENV / Clients -----
 DDB_TABLE = os.getenv("DDB_TABLE")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-import requests
 API_BOOK_URL = os.environ.get("API_BOOK_URL", "http://localhost:8000/book")
 
-# ----- AWS Setup -----
-table = boto3.resource("dynamodb").Table(os.environ["DDB_TABLE"])
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+if not DDB_TABLE:
+    raise RuntimeError("DDB_TABLE is not set")
+if not OPENAI_API_KEY:
+    raise RuntimeError("OPENAI_API_KEY is not set")
 
-# ----- LangGraph State -----
-class BookingState(TypedDict):
-    job: Dict[str, Any]
-    assignedTechId: Optional[str]
-    notifications: List[str]
+table = boto3.resource("dynamodb").Table(DDB_TABLE)
+client = OpenAI(api_key=OPENAI_API_KEY)
 
-# ----- Nodes -----
-def create_job(state: BookingState) -> BookingState:
-    table.put_item(Item=state["job"])
-    return state
-
-def llm_assign_tech(state: BookingState) -> BookingState:
-    techs = table.scan(
-        FilterExpression="begins_with(#id, :t)",
-        ExpressionAttributeNames={"#id": "id"},
-        ExpressionAttributeValues={":t": "TECH#"}
-    )["Items"]
-
-    prompt = f"""
-    You are a scheduling AI for a service company.
-    Job: {json.dumps(state['job'], default=str)}
-    Technicians: {json.dumps(techs, default=str)}
-
-    Rules:
-    - Prefer matching skills.
-    - If multiple match, choose closest by lat/lon.
-    - If tied, choose lowest todayLoad.
-    Return ONLY the technician's 'id'.
-    """
-
-    resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0
-    )
-
-    tech_id = resp.choices[0].message.content.strip()
-    state["assignedTechId"] = tech_id
-    return state
-
-def update_job(state: BookingState) -> BookingState:
-    table.update_item(
-        Key={"id": state["job"]["id"]},
-        UpdateExpression="SET #s = :s, assignedTechId = :t, updatedAt = :u",
-        ExpressionAttributeNames={"#s": "status"},
-        ExpressionAttributeValues={
-            ":s": "ASSIGNED",
-            ":t": state["assignedTechId"],
-            ":u": datetime.utcnow().isoformat()
-        }
-    )
-    return state
-
-# ----- Build LangGraph -----
-builder = StateGraph(BookingState)
-builder.add_node("create_job", create_job)
-builder.add_node("llm_assign_tech", llm_assign_tech)
-builder.add_node("update_job", update_job)
-
-builder.set_entry_point("create_job")
-builder.add_edge("create_job", "llm_assign_tech")
-builder.add_edge("llm_assign_tech", "update_job")
-builder.add_edge("update_job", END)
-
-booking_graph = builder.compile()
+# ----- Compile LangGraph -----
+booking_graph = build_booking_graph(table, client)
 
 # ----- FastAPI App -----
 app = FastAPI()
+
 @app.get("/")
 async def docs_redirect():
     return RedirectResponse(url="/docs")
 
-# Request schema
+# --- helper to make DynamoDB Decimals JSON-safe ---
+def to_jsonable(o: Any):
+    if isinstance(o, list):
+        return [to_jsonable(x) for x in o]
+    if isinstance(o, dict):
+        return {k: to_jsonable(v) for k, v in o.items()}
+    if isinstance(o, Decimal):
+        return float(o)
+    return o
+
+# ====== Schemas ======
 class BookingRequest(BaseModel):
     name: str
     phone: str
@@ -111,6 +60,11 @@ class BookingRequest(BaseModel):
     lat: float
     lon: float
 
+class ChatRequest(BaseModel):
+    jobId: str
+    question: str
+
+# ====== Endpoints ======
 @app.post("/book")
 def book_service(req: BookingRequest):
     job_id = f"JOB#{uuid.uuid4().hex[:8]}"
@@ -147,17 +101,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- helper to make DynamoDB Decimals JSON-safe ---
-def to_jsonable(o: Any):
-    if isinstance(o, list):
-        return [to_jsonable(x) for x in o]
-    if isinstance(o, dict):
-        return {k: to_jsonable(v) for k, v in o.items()}
-    if isinstance(o, Decimal):
-        return float(o)
-    return o
-
-# ========== STATUS LOOKUP ==========
 @app.get("/status/{job_id}")
 def get_status(job_id: str):
     resp = table.get_item(Key={"id": job_id})
@@ -173,14 +116,8 @@ def get_status(job_id: str):
         "technician": to_jsonable(tech) if tech else None
     }
 
-# ========== SIMPLE CHAT (LLM) ==========
-class ChatRequest(BaseModel):
-    jobId: str
-    question: str
-
 @app.post("/chat")
 def chat(req: ChatRequest):
-    # fetch context
     j = table.get_item(Key={"id": req.jobId}).get("Item")
     if not j:
         return {"error": "Job not found", "jobId": req.jobId}
@@ -188,11 +125,7 @@ def chat(req: ChatRequest):
     if j.get("assignedTechId"):
         tech = table.get_item(Key={"id": j["assignedTechId"]}).get("Item")
 
-    # build compact, grounded prompt
-    context = {
-        "job": j,
-        "technician": tech,
-    }
+    context = {"job": j, "technician": tech}
     prompt = f"""
 You are ServiceAI. Answer using ONLY this JSON context and be concise (<80 words).
 If asked for ETA, use the scheduled window; if uncertain, state the window and offer to notify.
@@ -203,8 +136,6 @@ CONTEXT:
 USER QUESTION:
 {req.question}
 """
-
-    # call your LLM (same client you used for assignment)
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role":"user","content":prompt}],
@@ -228,7 +159,8 @@ USER QUESTION:
 
     return {"answer": answer}
 
-sessions = {}
+# ====== Chatbot LLM (form-filling) ======
+sessions: Dict[str, Dict[str, Any]] = {}
 
 class ChatMessage(BaseModel):
     session_id: str
@@ -253,7 +185,7 @@ Rules:
 - If the user provides ALL fields in one message, IMMEDIATELY output:
 
 BOOK_READY
-{"name":"...", "phone":"...", "email":"...", "issue":"...", "date":"YYYY-MM-DD", "start":"HH:MM", "end":"HH:MM", "address":"...", "lat":25.04, "lon":121.55}
+{"name":"...", "phone":"...", "email":"...", "issue":"...", "date":"YYYY-MM-DD", "start":"HH:MM", "end":"HH:MM", "address":"...", "lat":"...", "lon":"..."}
 
 - NO extra text before BOOK_READY.
 - NO markdown/code fences.
@@ -269,10 +201,7 @@ def all_fields_present(data: Dict[str, Any]) -> bool:
 def chatbot_llm(msg: ChatMessage):
     sid = msg.session_id
     if sid not in sessions:
-        sessions[sid] = {
-            "history": [{"role": "system", "content": SYSTEM_PROMPT}],
-            "data": {}
-        }
+        sessions[sid] = {"history": [{"role": "system", "content": SYSTEM_PROMPT}], "data": {}}
 
     sessions[sid]["history"].append({"role": "user", "content": msg.message})
 
@@ -293,14 +222,13 @@ def chatbot_llm(msg: ChatMessage):
     # If booking complete
     if reply.strip().startswith("BOOK_READY"):
         try:
-            # non-greedy JSON capture; guard if missing
             m = re.search(r"\{.*?\}", reply, re.S)
             if not m:
                 raise ValueError("No JSON object found after BOOK_READY")
 
             data = json.loads(m.group())
 
-            # Normalize common variants we've already seen
+            # Normalize common variants
             if "service_issue" in data and "issue" not in data:
                 data["issue"] = data["service_issue"]
             if "latitude" in data and "lat" not in data:
@@ -313,7 +241,6 @@ def chatbot_llm(msg: ChatMessage):
             if all_fields_present(sessions[sid]["data"]):
                 b = sessions[sid]["data"]
 
-                # Build payload exactly as /book expects
                 payload = {
                     "name": b["name"],
                     "phone": b["phone"],
@@ -327,11 +254,10 @@ def chatbot_llm(msg: ChatMessage):
                     "lon": float(b["lon"])
                 }
 
-                # Single POST to /book
+                # POST to /book
                 url = (API_BOOK_URL or "http://127.0.0.1:8000/book").rstrip("/")
                 r = requests.post(url, json=payload, timeout=10)
 
-                # Capture body for debugging before raising
                 raw_text = r.text
                 status = r.status_code
                 r.raise_for_status()
@@ -350,18 +276,17 @@ def chatbot_llm(msg: ChatMessage):
 
                 sessions.pop(sid, None)
                 return {
-                    "reply": f"✅ Booking confirmed! Job ID: {job_id} — Assigned to {tech_id}",
+                    "reply": f"Booking confirmed! Job ID: {job_id} — Assigned to {tech_id}",
                     "tokens": token_info
                 }
             else:
-                # Not all fields present; just continue the conversation
+                # Keep chatting for missing fields
                 return {"reply": reply, "tokens": token_info}
 
         except Exception as http_err:
-            # Do NOT re-raise blindly; surface the error and keep the convo alive
             print(f"[chatbot_llm] POST /book failed: {http_err}")
             reply += f"\n\n(⚠ Booking failed: {http_err})"
             return {"reply": reply, "tokens": token_info}
 
-    # Default: not ready yet, return the assistant message
+    # Not ready yet
     return {"reply": reply, "tokens": token_info}

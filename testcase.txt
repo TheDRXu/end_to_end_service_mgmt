@@ -1,35 +1,43 @@
-1. Taipei
+Taipei
 
-Hi, my name’s Alice Wang. My brakes have been squeaking a lot lately and I think they need replacing. I’m free on September 3rd, 2025 from 10 to noon. You can reach me at +886 912 111 001 or alice.wang@example.com. I’m at No. 45, Zhongshan North Road, Taipei, near the MRT station.
+"Hi, I’m Grace Chen. My air conditioner isn’t cooling well. Could I book a repair for September 2nd, 2025, any time between 1 and 3 PM? You can call me at +886 912 222 001 or email grace.chen@example.com. I live at No. 88, Fuxing South Road, Taipei."
+(lat: 25.0418, lon: 121.5440)
 
-Hey, I’m Kevin Liu. Just wondering if I can get my tires rotated sometime soon. September 4th in the morning, between 9 and 11, works for me. My phone’s +886 912 111 002, email kevin.liu@example.com. Address is No. 12, Renai Road, Taipei.
+"Hello, this is Jason Wu. My car’s engine light came on yesterday. I’d like a check-up on September 6th around 9:30 AM. Contact me at +886 912 222 002, jason.wu@example.com. I’m at No. 10, Songjiang Road, Taipei."
+(lat: 25.0522, lon: 121.5331)
 
-Hello, Joyce Chen here. My car’s been acting up and I think it needs an engine check. Can you send someone over on September 5th, between 2 and 4 PM? Contact me at joyce.chen@example.com or +886 912 111 003. I’m at No. 88, Xinyi Road, Taipei.
+"Hi, my name’s Linda Huang. I need an oil change and filter replacement. Can I get it done on September 4th, 2025, between 3 and 5 PM? My phone is +886 912 222 003, email linda.huang@example.com. Address: No. 25, Minquan East Road, Taipei."
+(lat: 25.0630, lon: 121.5430)
 
-Hi, I’m Daniel Wu. My AC’s not cooling properly. If possible, could you come by on September 6th from 1 to 3 PM? You can call me at +886 912 111 004. I live at No. 20, Minquan East Road, Taipei.
+Taichung
 
-Morning, I’m Grace Lin. I need an oil change before my road trip. September 7th from 8:30 to 10:30 AM would be perfect. My number’s +886 912 111 005 and my address is No. 17, Fuxing North Road, Taipei.
+"Hey there, I’m Peter Chang. My front brakes feel soft when I press them. Could someone check them on September 5th, 2025, at around 10 AM? Phone: +886 912 333 001, Email: peter.chang@example.com. Address: No. 77, Taiwan Boulevard, Taichung."
+(lat: 24.1624, lon: 120.6415)
 
-2. Taichung
+"Good afternoon, I’m Ivy Lee. I need my tires replaced — they’re getting worn out. I’m free on September 7th, 2025, from 2 to 4 PM. Phone: +886 912 333 002, Email: ivy.lee@example.com. Address: No. 50, Yingcai Road, Taichung."
+(lat: 24.1518, lon: 120.6543)
 
-Hi there, Michael Tsai here. My suspension feels loose when driving over bumps. Could someone check it on September 3rd, between 9 and 11 AM? My number is +886 912 222 001, I’m at No. 25, Taiwan Boulevard, Taichung.
+"Hello, this is Frank Ho. I think my battery is dying — car struggles to start in the morning. Can I get it checked on September 3rd at 9 AM? Contact: +886 912 333 003, frank.ho@example.com. Address: No. 32, Wenxin Road, Taichung."
+(lat: 24.1627, lon: 120.6485)
 
-Hello, this is Sophie Yang. I’d like a brake inspection before my trip south. September 4th, anytime between 3 and 5 PM, works for me. My phone is +886 912 222 002, address is No. 98, Minsheng Road, Taichung.
+Kaohsiung
 
-Hey, Eric Huang here. My dashboard warning lights came on, so I think it’s an electrical issue. Can you send a tech on September 5th from 10 to 12? I’m at No. 33, Gongyi Road, Taichung. Phone: +886 912 222 003.
+"Hi, I’m Angela Wu. I’d like to book a service for a suspension check. September 2nd, 2025, from 1:30 PM to 3 PM works for me. My phone is +886 912 444 001, email angela.wu@example.com. Address: No. 88, Boai Road, Kaohsiung."
+(lat: 22.6500, lon: 120.3233)
 
-Hi, I’m Lily Chen. I just need a quick oil and filter change. September 6th between 1:30 and 3:30 PM would be great. You can reach me at +886 912 222 004, I live at No. 5, Zhonghua Road, Taichung.
+"Hello, this is Michael Tsai. My headlights have stopped working, probably an electrical issue. Can I get it fixed on September 8th, 2025, at 10 AM? Contact me at +886 912 444 002, michael.tsai@example.com. Address: No. 15, Zhonghua 4th Road, Kaohsiung."
+(lat: 22.6283, lon: 120.2968)
 
-Hello, Jason Wu here. My car’s making a strange knocking noise — might be the engine. September 7th from 2 to 4 PM works. Phone: +886 912 222 005. Address: No. 77, Jianguo Road, Taichung.
+"Hi, my name’s Sophie Lin. I need an oil change for my scooter. Can I come in on September 6th at 4 PM? You can reach me at +886 912 444 003 or sophie.lin@example.com. Address: No. 33, Minzu Road, Kaohsiung."
+(lat: 22.6405, lon: 120.3028)
 
-3. Kaohsiung
+Extra Mixed Cases
 
-Good morning, I’m Vivian Chang. My car’s AC hasn’t been serviced in a while and it’s not as cold as it used to be. Could you come on September 3rd, between 10 and 12? My contact is +886 912 333 001, address No. 110, Zhongshan Road, Kaohsiung.
+"Hello, I’m Eric Yang from Taipei. My car has been overheating lately. I’m free on September 3rd from 11 AM to 1 PM. Phone: +886 912 555 001, Email: eric.yang@example.com. Address: No. 5, Xinyi Road, Taipei."
+(lat: 25.0329, lon: 121.5651)
 
-Hi, Andy Lee here. I need my brake pads replaced soon. September 4th, between 1 and 3 PM, should be fine. Call me at +886 912 333 002. I’m at No. 52, Minzu Road, Kaohsiung.
+"Hi there, I’m Mandy Chou in Taichung. I think my clutch needs replacement. Could I get it checked on September 9th at 2 PM? Contact: +886 912 555 002, mandy.chou@example.com. Address: No. 11, Jianguo Road, Taichung."
+(lat: 24.1446, lon: 120.6835)
 
-Hey, Hannah Liu. I’d like to get my tires balanced — I’ve noticed some vibration at higher speeds. September 5th, 9:30 to 11:30 AM works. My number’s +886 912 333 003. I live at No. 88, Wufu Road, Kaohsiung.
-
-Hello, Ryan Chen speaking. I think my suspension needs checking — the ride feels bumpy. September 6th from 2 to 4 PM would be good. You can reach me at +886 912 333 004. Address: No. 19, Boai Road, Kaohsiung.
-
-Morning, I’m Stella Huang. I’d like an engine tune-up before I drive to Taipei. September 7th, between 8:30 and 10:30 AM, is fine. My contact: +886 912 333 005. Address: No. 65, Guanghua Road, Kaohsiung.
+"Good morning, I’m Tom Hsu from Kaohsiung. My steering feels loose, might be a suspension issue. I’m available on September 10th, 2025, at 9:30 AM. Phone: +886 912 555 003, tom.hsu@example.com. Address: No. 66, Jianguo 3rd Road, Kaohsiung."
+(lat: 22.6261, lon: 120.3007)

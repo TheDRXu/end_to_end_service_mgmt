@@ -92,6 +92,25 @@ def book_service(req: BookingRequest):
         "assignedTechId": result["assignedTechId"]
     }
 
+@app.post("/book_friendly")
+def book_friendly(payload: dict):
+    # Call the existing /book logic internally
+    from fastapi.testclient import TestClient
+    client = TestClient(app)
+    r = client.post("/book", json=payload)
+
+    if r.status_code != 200:
+        return {"message": f"Booking failed: {r.text}"}
+
+    data = r.json()
+    job_id = data.get("jobId", "UNKNOWN")
+    tech_id = data.get("assignedTechId", "UNKNOWN")
+
+    return {
+        "message": f"✅ Booking confirmed! Job ID: {job_id} — Assigned to {tech_id}"
+    }
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://end-to-end-service-mgmt.s3-website-ap-southeast-2.amazonaws.com"],

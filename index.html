@@ -38,7 +38,7 @@
   <h1>🔧 End-to-End Service Management — MVP</h1>
   <div class="api-box">
     <label for="apiUrl" style="font-size:12px;color:#a9b7c4">API URL</label>
-    <input id="apiUrl" placeholder="http://3.106.215.78:8000" />
+    <input id="apiUrl" placeholder="http://3.106.215.78:8000" value="http://3.106.215.78:8000">
     <button class="btn" id="saveApiBtn">Save</button>
   </div>
 </header>
@@ -47,7 +47,7 @@
   <div class="tabs">
     <button class="tab active" data-tab="book">Book Service</button>
     <button class="tab" data-tab="status">Status & Chat</button>
-    <button class="tab" data-tab="chatbot">Chatbot Booking</button>
+    <button class="tab" data-tab="chatbot">AI Booking Buddy</button>
   </div>
 
   <!-- BOOK SERVICE -->
@@ -68,7 +68,7 @@
       <span id="bookStatus"></span>
     </div>
     <h3>Response</h3>
-    <pre id="bookOut">{}</pre>
+    <pre id="bookOut"></pre>
   </section>
 
   <!-- STATUS -->
@@ -93,7 +93,7 @@
 
   <!-- CHATBOT -->
   <section id="chatbot" class="card" style="display:none">
-    <h2>Chatbot Booking</h2>
+    <h2>AI Booking Buddy</h2>
     <div id="chatWindow" style="background:#0f172a; border:1px solid #27314f; border-radius:10px; padding:10px; height:300px; overflow-y:auto; margin-bottom:10px;"></div>
     <div class="row">
       <input id="chatInput" placeholder="Say something..." />
@@ -113,7 +113,7 @@
     chatbot: document.getElementById('chatbot')
   };
 
-  apiInput.value = localStorage.getItem('API_URL') || '';
+  apiInput.value = localStorage.getItem('API_URL') || "http://3.106.215.78:8000";
   saveApiBtn.onclick = () => {
     const v = apiInput.value.trim();
     if(!v){ alert('Enter your FastAPI base URL'); return; }
@@ -133,33 +133,53 @@
 
   // BOOK
   document.getElementById('bookBtn').onclick = async () => {
-    try{
-      const base = API(); if(!base) return alert('Set API URL first.');
-      const body = {
-        name:  document.getElementById('name')?.value.trim() || '',
-        phone: document.getElementById('phone')?.value.trim() || '',
-        email: document.getElementById('email')?.value.trim() || '',
-        issue: document.getElementById('issue')?.value.trim() || '',
-        date:  document.getElementById('date')?.value.trim() || '',
-        start: document.getElementById('start')?.value.trim() || '',
-        end:   document.getElementById('end')?.value.trim() || '',
-        address: document.getElementById('address')?.value.trim() || '',
-        lat:   parseFloat(document.getElementById('lat')?.value.trim() || '0'),
-        lon:   parseFloat(document.getElementById('lon')?.value.trim() || '0')
-      };
+  try {
+    const base = API();
+    if (!base) return alert('Set API URL first.');
 
-      const resp = await fetch(`${base}/book`, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
-      const data = await resp.json();
-      bookOut.textContent = j(data);
-      if (resp.ok && data.jobId) {
-        bookStatus.innerHTML = `<span class="ok">Booked ✔</span>`;
-        localStorage.setItem('LAST_JOB_ID', data.jobId);
-        jobId.value = data.jobId;
-      } else {
-        bookStatus.innerHTML = `<span class="err">Error</span>`;
+    const body = {
+      name: document.getElementById('name')?.value.trim() || '',
+      phone: document.getElementById('phone')?.value.trim() || '',
+      email: document.getElementById('email')?.value.trim() || '',
+      issue: document.getElementById('issue')?.value.trim() || '',
+      date: document.getElementById('date')?.value.trim() || '',
+      start: document.getElementById('start')?.value.trim() || '',
+      end: document.getElementById('end')?.value.trim() || '',
+      address: document.getElementById('address')?.value.trim() || '',
+      lat: parseFloat(document.getElementById('lat')?.value.trim() || '0'),
+      lon: parseFloat(document.getElementById('lon')?.value.trim() || '0')
+    };
+
+    // Call the friendly booking endpoint instead of /book
+    const resp = await fetch(`${base}/book_friendly`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const data = await resp.json();
+    if (resp.ok && data.message) {
+      // Show friendly message from API
+      bookOut.textContent = data.message;
+      bookStatus.innerHTML = `<span class="ok">Booked ✔</span>`;
+
+      // Try to extract Job ID from message
+      const match = data.message.match(/Job ID:\s*([^\s]+)/i);
+      if (match) {
+        const jobIdVal = match[1];
+        localStorage.setItem('LAST_JOB_ID', jobIdVal);
+        jobId.value = jobIdVal;
       }
-    } catch(err){ bookStatus.innerHTML = `<span class="err">Error</span>`; bookOut.textContent = err.message; }
-  };
+    } else {
+      bookStatus.innerHTML = `<span class="err">Error</span>`;
+      bookOut.textContent = data.error || "Booking failed.";
+    }
+  } catch (err) {
+    bookStatus.innerHTML = `<span class="err">Error</span>`;
+    bookOut.textContent = err.message;
+  }
+};
+
 
   // STATUS
   jobId.value = localStorage.getItem('LAST_JOB_ID') || '';
@@ -171,11 +191,11 @@ document.getElementById('statusBtn').onclick = async () => {
     const id = jobId.value.trim() || localStorage.getItem('LAST_JOB_ID');
     if (!id) return alert('Enter a Job ID.');
 
-    // Force HTML/text fetch instead of JSON
+    // Force HTML fetch instead of JSON
     const r = await fetch(`${base}/status/${encodeURIComponent(id)}?format=html`);
     const html = await r.text();
 
-    // Render the HTML in the status output container
+    // Render HTML in the container (from LLM)
     statusOut.innerHTML = html;
   } catch (err) {
     statusOut.textContent = err.message;
@@ -183,15 +203,33 @@ document.getElementById('statusBtn').onclick = async () => {
 };
 
   document.getElementById('askBtn').onclick = async () => {
-    try{
-      const base = API(); if(!base) return alert('Set API URL first.');
-      const id = jobId.value.trim();
-      if(!id) return alert('Enter a Job ID.');
-      const qVal = q.value.trim() || "What's my ETA?";
-      const r = await fetch(`${base}/chat`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ jobId:id, question:qVal }) });
-      chatOut.textContent = j(await r.json());
-    } catch(err){ chatOut.textContent = err.message; }
-  };
+  try {
+    const base = API();
+    if (!base) return alert('Set API URL first.');
+    const id = jobId.value.trim();
+    if (!id) return alert('Enter a Job ID.');
+    const qVal = q.value.trim() || "What's my ETA?";
+
+    const r = await fetch(`${base}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobId: id, question: qVal })
+    });
+
+    const data = await r.json();
+
+    // Expecting backend to return { answer: "..." }
+    if (data.answer) {
+      chatOut.textContent = data.answer; // Show only LLM answer
+    } else if (data.error) {
+      chatOut.textContent = `Error: ${data.error}`;
+    } else {
+      chatOut.textContent = "Unexpected response format.";
+    }
+  } catch (err) {
+    chatOut.textContent = err.message;
+  }
+};
 
   // CHATBOT
   const chatWindow = document.getElementById('chatWindow');

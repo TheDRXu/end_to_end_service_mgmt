@@ -41,3 +41,6 @@ Extra Mixed Cases
 
 "Good morning, I’m Tom Hsu from Kaohsiung. My steering feels loose, might be a suspension issue. I’m available on September 10th, 2025, at 9:30 AM. Phone: +886 912 555 003, tom.hsu@example.com. Address: No. 66, Jianguo 3rd Road, Kaohsiung."
 (lat: 22.6261, lon: 120.3007)
+
+
+Hi, my name’s Sophie Lin. I need an oil change for my scooter. Can I come in on September 6th at 4 PM? You can reach me at +886 912 444 003 or sophie.lin@example.com. Address: No. 33, Minzu Road, Kaohsiung." (lat: 22.6405, lon: 120.3028)

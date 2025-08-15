@@ -1,6 +1,6 @@
 # main.py
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, PlainTextResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -8,7 +8,6 @@ from decimal import Decimal
 from datetime import datetime
 from dotenv import load_dotenv
 import boto3, os, uuid, json, re, requests
-
 from openai import OpenAI
 from graph import build_booking_graph, BookingState
 
@@ -101,20 +100,79 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/status/{job_id}")
-def get_status(job_id: str):
+def explain_status_text(job: Dict[str, Any], tech: Optional[Dict[str, Any]],
+                        tone: str = "friendly", locale: str = "en", max_words: int = 90) -> str:
+    ctx_json = json.dumps(to_jsonable({"job": job, "technician": tech}))
+    prompt = f"""
+You are ServiceAI. Write a {tone} message in {locale} for the customer, based ONLY on this JSON:
+
+{ctx_json}
+
+Guidelines:
+- Greet the customer by name.
+- State current status and the appointment date with time window (no timezone changes).
+- Mention assigned technician name if available and what they'll do.
+- Give a next step or expectation (e.g., we'll text when the tech is on the way).
+- Keep it under {max_words} words.
+- Return PLAIN TEXT only (no JSON, no markdown).
+"""
+    try:
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2
+        )
+        return resp.choices[0].message.content.strip()
+    except Exception:
+        # Safe fallback if LLM call fails
+        slot = job.get("slot", {})
+        tech_name = tech.get("name") if tech else None
+        return (
+            f"Hi {job.get('customer',{}).get('name','there')}, your job {job.get('id')} is "
+            f"{job.get('status','PENDING')} for {slot.get('date','(date TBD)')} "
+            f"{slot.get('start','?')}–{slot.get('end','?')}. "
+            f"{('Your technician is ' + tech_name + '. ') if tech_name else ''}"
+            f"We’ll keep you posted."
+        )
+
+@app.get("/status/{job_id}", response_class=HTMLResponse)
+def get_status(job_id: str, format: str = "html"):
     resp = table.get_item(Key={"id": job_id})
     if "Item" not in resp:
-        return {"error": "Job not found", "jobId": job_id}
+        explanation = f"Job {job_id} not found."
+        return HTMLResponse(f"<p>{explanation}</p>") if format == "html" else PlainTextResponse(explanation)
+
     job = resp["Item"]
     tech = None
     if job.get("assignedTechId"):
         t = table.get_item(Key={"id": job["assignedTechId"]})
         tech = t.get("Item")
-    return {
-        "job": to_jsonable(job),
-        "technician": to_jsonable(tech) if tech else None
-    }
+
+    job_json = to_jsonable(job)
+    tech_json = to_jsonable(tech) if tech else None
+
+    prompt = f"""
+    You are a service assistant. 
+    Provide a short, friendly update about the customer's current booking, including the job status, date/time, location, and assigned technician name. 
+    Avoid unnecessary details unless requested.
+
+    Job:
+    {json.dumps(job_json)}
+
+    Technician:
+    {json.dumps(tech_json)}
+    """
+    resp_llm = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0
+    )
+    explanation = resp_llm.choices[0].message.content.strip()
+
+    if format == "text":
+        return PlainTextResponse(explanation)
+    return HTMLResponse(f"<p>{explanation}</p>")
+
 
 @app.post("/chat")
 def chat(req: ChatRequest):

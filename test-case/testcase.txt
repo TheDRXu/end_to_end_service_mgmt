@@ -17,8 +17,7 @@ Taichung
 "Good afternoon, I’m Ivy Lee. I need my tires replaced — they’re getting worn out. I’m free on September 7th, 2025, from 2 to 4 PM. Phone: +886 912 333 002, Email: ivy.lee@example.com. Address: No. 50, Yingcai Road, Taichung."
 (lat: 24.1518, lon: 120.6543)
 
-"Hello, this is Frank Ho. I think my battery is dying — car struggles to start in the morning. Can I get it checked on September 3rd at 9 AM? Contact: +886 912 333 003, frank.ho@example.com. Address: No. 32, Wenxin Road, Taichung."
-(lat: 24.1627, lon: 120.6485)
+"Hello, this is Frank Ho. I think my battery is dying — car struggles to start in the morning. Can I get it checked on September 3rd at 9 AM until 12PM? Contact: +886 912 333 003, frank.ho@example.com. Address: No. 32, Wenxin Road, Taichung." (lat: 24.1627, lon: 120.6485)
 
 Kaohsiung
 

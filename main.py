@@ -269,17 +269,19 @@ Collect these fields (exact keys) for the booking:
 - lat   (number)
 - lon   (number)
 
-Rules:
-- If the user provides ALL fields in one message, IMMEDIATELY output:
+Strict rules:
+1. Always remember previously collected values. Do not ask again if a field is already provided.
+2. Do not hallucinate or invent values. Only use values explicitly given by the user.
+3. If a value is unclear or missing, explicitly ask the user for that exact field. Never guess.
+4. Ask for exactly ONE missing field at a time, confirm it, then continue.
+5. If the user gives only a month/day without a year, insert the current year automatically.
+   - Example: if today is 2025-08-18 and the user says "Aug 25", output "2025-08-25".
+6. When ALL fields are collected, IMMEDIATELY output in this format with NO extra text:
 
 BOOK_READY
 {"name":"...", "phone":"...", "email":"...", "issue":"...", "date":"YYYY-MM-DD", "start":"HH:MM", "end":"HH:MM", "address":"...", "lat":"...", "lon":"..."}
-
-- NO extra text before BOOK_READY.
-- NO markdown/code fences.
-- If some fields are missing, ask for exactly ONE missing field at a time, confirm it, and continue.
-- Never invent values. Keep replies short.
 """
+
 
 def all_fields_present(data: Dict[str, Any]) -> bool:
     required = ["name", "phone", "email", "issue", "date", "start", "end", "address", "lat", "lon"]

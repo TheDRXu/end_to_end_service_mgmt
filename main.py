@@ -16,7 +16,8 @@ load_dotenv()
 # ----- ENV / Clients -----
 DDB_TABLE = os.getenv("DDB_TABLE")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-API_BOOK_URL = os.getenv("API_BOOK_URL", "http://localhost:8000/book")
+API_BOOK_URL = os.getenv("API_BOOK_URL", "http://3.106.253.70:8000/book")
+OPEN_API_MODEL = "gpt-4o-mini"
 
 if not DDB_TABLE:
     raise RuntimeError("DDB_TABLE is not set")
@@ -147,7 +148,7 @@ Guidelines:
 """
     try:
         resp = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=OPEN_API_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2
         )
@@ -192,7 +193,7 @@ def get_status(job_id: str, format: str = "html"):
     {json.dumps(tech_json)}
     """
     resp_llm = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=OPEN_API_MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0
     )
@@ -224,7 +225,7 @@ USER QUESTION:
 {req.question}
 """
     resp = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=OPEN_API_MODEL,
         messages=[{"role":"user","content":prompt}],
         temperature=0
     )
@@ -294,7 +295,7 @@ def chatbot_llm(msg: ChatMessage):
 
     # Call LLM
     resp = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=OPEN_API_MODEL,
         messages=sessions[sid]["history"]
     )
     reply = resp.choices[0].message.content

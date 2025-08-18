@@ -43,8 +43,13 @@ project-root/
 │   ├── booking_pipeline.png
 │   └── solution.png
 │
-└── web/                # Frontend
-    └── index.html
+└── web/ # Frontend
+└── index.html
+
+yaml
+Copy
+Edit
+
 ---
 
 ## 🚀 Setup

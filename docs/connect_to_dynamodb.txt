@@ -1,0 +1,9 @@
+aws configure set aws_session_token "IQoJb3JpZ2luX2VjEFQaCXVzLWVhc3QtMSJIMEYCIQDEIR9Vnb8/zQheekJvy0qNeYmb1Gbsq29Bm/JkKkR5FwIhAI5/d4pJWhfN30aP6bdOU0SzfwfrR2Bh/rd4FzBrkRSGKoQDCJz//////////wEQABoMODc2MDgzMzkxMzQ0IgypG1uJjI85wnnumNUq2AK7JDsOTmpoZUEK5o5ZQiJnbLUmRhaVmny6DmeGiNb1GhcM00P7QHBoKdx7GOoF0yTkp0GsuSB7PKQGKMj4vClt1O8my2cvxCNV2EkGktJwt1MX70zri32G1eKAi8guXR/B2ty9nf/Uc8frJfhfK1s4gP7AGyV2ItAqu3HKMTkqZQo/6ESjtyt2Lj0uwAMLYy9BakBH9hi0mYXtq3FiA3N7Zpo/4652VKLTWsAlUzzhCedkpv5KV+qvy2i+3GSN9QUCbNFUjxehFxXjS7zPMSSlIe/g4bWgCx51gQy60lKmWnefTbptl+WNJBGOYWiqJC7lRvHMLOqdOpUtF63RN9JymaHb8Ctosmm/g4CgJ22yAInSRDN0vC9RdwbN6JPyYJdMx27n2i+PNeNEkbb9jgWcqvbyuXbH+7oKOgPiyfPVzN5Pzdcuyco0XwHR+q5ebMaBQcoN5YoIoDDysIrFBjqmARFqcZWMhsqYKBTa9+wPwqllVI4cLIJZEFFg/VOVKq1o9Sq5eWD1KU5KB0N210l+DYGHZ8NvrVWr18nkKXXxuS+plXnXmt9cITvGapnn6ctrGqK+5K3CPlN3tmGS1FTZNuUV6Zm/Tj3pQ8NznrWBa1YMmwHAP56EFHfV5HuSERDG4Py5ojfW1iXkOSFIo7QNkEEYRd5FxokrsbX1ktr6hyPw3IipgjA="
+aws configure
+
+run unicorn
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+http://end-to-end-service-mgmt.s3-website-ap-southeast-2.amazonaws.com/
+
+aws s3 cp ./index.html s3://end-to-end-service-mgmt/index.html --cache-control "no-cache" --content-type "text/html"

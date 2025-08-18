@@ -9,21 +9,31 @@ from datetime import datetime
 from dotenv import load_dotenv
 import boto3, os, uuid, json, re, requests
 from openai import OpenAI
-from graph import build_booking_graph, BookingState
+from src.graph import build_booking_graph, BookingState
 
 load_dotenv()
 
 # ----- ENV / Clients -----
 DDB_TABLE = os.getenv("DDB_TABLE")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-API_BOOK_URL = os.environ.get("API_BOOK_URL", "http://localhost:8000/book")
+API_BOOK_URL = os.getenv("API_BOOK_URL", "http://localhost:8000/book")
 
 if not DDB_TABLE:
     raise RuntimeError("DDB_TABLE is not set")
 if not OPENAI_API_KEY:
     raise RuntimeError("OPENAI_API_KEY is not set")
 
-table = boto3.resource("dynamodb").Table(DDB_TABLE)
+session = boto3.Session(
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    aws_session_token=os.getenv("AWS_SESSION_TOKEN"),
+    region_name=os.getenv("AWS_DEFAULT_REGION"),
+)
+
+s3 = session.client("s3")
+dynamodb = session.resource("dynamodb")
+table = dynamodb.Table(DDB_TABLE)
+
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ----- Compile LangGraph -----

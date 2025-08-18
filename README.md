@@ -40,15 +40,14 @@ SERVICE_MANAGEMENT_SYSTEM/
 
 ### 1. Clone repository
 ```bash
-git clone https://github.com/yourusername/yourproject.git
-cd yourproject
+git clone https://github.com/TheDRXu/end_to_end_service_mgmt.git
+cd end_to_end_service_mgmt
 ```
 
-### 2. Create virtual environment
+### 2. Create virtual environment (Anaconda/Miniconda)
 ```bash
-python -m venv .venv
-source .venv/bin/activate   # Mac/Linux
-.venv\Scripts\activate      # Windows
+conda create -n end_to_end_mgmt python=3.13 -y
+conda activate end_to_end_mgmt
 ```
 
 ### 3. Install dependencies
@@ -67,14 +66,14 @@ AWS_DEFAULT_REGION=ap-southeast-2
 ```
 
 ⚠️ Never commit `.env` to GitHub.
-
+Or you can use aws configure to configure the aws settings
 ---
 
 ## ▶️ Run the Project
 
 Start backend:
 ```bash
-python main.py
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 API runs on:
@@ -84,7 +83,7 @@ http://localhost:8000
 
 Open the frontend:
 ```
-front-end/index.html
+http://end-to-end-service-mgmt.s3-website-ap-southeast-2.amazonaws.com/
 ```
 
 ---
@@ -110,6 +109,6 @@ Solution overview:
 
 ---
 
-## 📖 Documentation
+## 📖 Test-case
 
-- DynamoDB connection notes: `docs/connect_to_dynamodb.txt`
+- We provide two test-case, one for technicians (test-case/insert_technicians.ipynb) and one for customer testcase (test-case/testcase.txt)

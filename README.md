@@ -64,9 +64,9 @@ AWS_SECRET_ACCESS_KEY=xxxxxxx
 AWS_SESSION_TOKEN=xxxxxxx
 AWS_DEFAULT_REGION=ap-southeast-2
 ```
-
-⚠️ Never commit `.env` to GitHub.
 Or you can use aws configure to configure the aws settings
+⚠️ Never commit `.env` to GitHub.
+
 ---
 
 ## ▶️ Run the Project

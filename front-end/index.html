@@ -38,7 +38,7 @@
   <h1>🔧 End-to-End Service Management — MVP</h1>
   <div class="api-box">
     <label for="apiUrl" style="font-size:12px;color:#a9b7c4">API URL</label>
-    <input id="apiUrl" placeholder="http://3.106.253.70:8000" value="http://3.106.253.70:8000">
+    <input id="apiUrl" placeholder="http://52.62.176.41:8000" value="http://52.62.176.41:8000">
     <button class="btn" id="saveApiBtn">Save</button>
   </div>
 </header>
@@ -58,7 +58,7 @@
       <div><label>Phone</label><input id="phone" placeholder="+8869..." /></div>
       <div><label>Email</label><input id="email" placeholder="john@example.com" /></div>
       <div><label>Issue</label><input id="issue" placeholder="brake replacement" /></div>
-      <div><label>Date</label><input id="date" placeholder="2025-08-18" /><small class="hint">YYYY-MM-DD</small></div>
+      <div><label>Date</label><input id="date" placeholder="2025-08-19" /><small class="hint">YYYY-MM-DD</small></div>
       <div class="row"><div><label>Start</label><input id="start" placeholder="10:00" /></div><div><label>End</label><input id="end" placeholder="12:00" /></div></div>
       <div><label>Address</label><input id="address" placeholder="Taipei City" /></div>
       <div class="row"><div><label>Latitude</label><input id="lat" placeholder="25.04" /></div><div><label>Longitude</label><input id="lon" placeholder="121.55" /></div></div>
@@ -113,7 +113,7 @@
     chatbot: document.getElementById('chatbot')
   };
 
-  apiInput.value = localStorage.getItem('API_URL') || "http://3.106.253.70:8000";
+  apiInput.value = localStorage.getItem('API_URL') || "http://52.62.176.41:8000";
   saveApiBtn.onclick = () => {
     const v = apiInput.value.trim();
     if(!v){ alert('Enter your FastAPI base URL'); return; }

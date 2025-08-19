@@ -10,13 +10,14 @@ from dotenv import load_dotenv
 import boto3, os, uuid, json, re, requests
 from openai import OpenAI
 from src.graph import build_booking_graph, BookingState
+from datetime import datetime
 
 load_dotenv()
 
 # ----- ENV / Clients -----
 DDB_TABLE = os.getenv("DDB_TABLE")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-API_BOOK_URL = os.getenv("API_BOOK_URL", "http://3.106.253.70:8000/book")
+API_BOOK_URL = os.getenv("API_BOOK_URL", "http://52.62.176.41:8000/book")
 OPEN_API_MODEL = "gpt-4o-mini"
 
 if not DDB_TABLE:
@@ -254,8 +255,12 @@ class ChatMessage(BaseModel):
     session_id: str
     message: str
 
-SYSTEM_PROMPT = """
+today = datetime.now().date().isoformat()
+
+SYSTEM_PROMPT = f"""
 You are a friendly automotive service booking assistant.
+
+Today's date is {today}.
 
 Collect these fields (exact keys) for the booking:
 - name
@@ -273,13 +278,13 @@ Strict rules:
 1. Always remember previously collected values. Do not ask again if a field is already provided.
 2. Do not hallucinate or invent values. Only use values explicitly given by the user.
 3. If a value is unclear or missing, explicitly ask the user for that exact field. Never guess.
-4. Ask for exactly ONE missing field at a time, confirm it, then continue.
-5. If the user gives only a month/day without a year, insert the current year automatically.
-   - Example: if today is 2025-08-18 and the user says "Aug 25", output "2025-08-25".
-6. When ALL fields are collected, IMMEDIATELY output in this format with NO extra text:
+4. If the user gives only month/day without a year, use the current year ({today[:4]}).
+5. If the user gives a past date (before {today}), politely ask them to provide a future date.
+6. Ask for exactly ONE missing field at a time, confirm it, then continue.
+7. When ALL fields are collected, IMMEDIATELY output in this format with NO extra text:
 
 BOOK_READY
-{"name":"...", "phone":"...", "email":"...", "issue":"...", "date":"YYYY-MM-DD", "start":"HH:MM", "end":"HH:MM", "address":"...", "lat":"...", "lon":"..."}
+{{"name":"...", "phone":"...", "email":"...", "issue":"...", "date":"YYYY-MM-DD", "start":"HH:MM", "end":"HH:MM", "address":"...", "lat":"...", "lon":"..."}}
 """
 
 
@@ -310,7 +315,7 @@ def chatbot_llm(msg: ChatMessage):
     }
 
     # If booking complete
-    if reply.strip().startswith("BOOK_READY"):
+    if "BOOK_READY" in reply:
         try:
             m = re.search(r"\{.*?\}", reply, re.S)
             if not m:
@@ -345,7 +350,7 @@ def chatbot_llm(msg: ChatMessage):
                 }
 
                 # POST to /book
-                url = (API_BOOK_URL or "http://127.0.0.1:8000/book").rstrip("/")
+                url = (API_BOOK_URL or "http://localhost:8000/book").rstrip("/")
                 r = requests.post(url, json=payload, timeout=10)
 
                 raw_text = r.text

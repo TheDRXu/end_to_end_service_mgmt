@@ -17,7 +17,7 @@ load_dotenv()
 # ----- ENV / Clients -----
 DDB_TABLE = os.getenv("DDB_TABLE")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-API_BOOK_URL = os.getenv("API_BOOK_URL", "http://52.62.176.41:8000/book")
+API_BOOK_URL = os.getenv("API_BOOK_URL", "http://16.176.19.127:8000/book")
 OPEN_API_MODEL = "gpt-4o-mini"
 
 if not DDB_TABLE:

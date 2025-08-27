@@ -1,8 +1,7 @@
-aws configure set aws_session_token "IQoJb3JpZ2luX2VjEGwaCXVzLWVhc3QtMSJHMEUCIFMrsr6XTnEotWP7oOr09MPHpn6+KHxTE7Qlq3y5kut5AiEA/BtjQAjFhmP+Ghcli6tpH9COWcz5VK/Ra/7B19zYAdMqhAMItf//////////ARAAGgw4NzYwODMzOTEzNDQiDDppE9FRBbc9gde+iCrYAiZ5ntcCNdqhx5jcYwmz2OfYeVd9O6VijHYWHfQikUTfu6DLWd4YUJWrt6SInMccHNZR9qkyNvBIHGRW0oKvRxC/t6xxKU8xroySGLnn3yTI6PgEKcA73wvKxdRnJV2xzmhod5+AAqPlwR5wxv2ZegLaYNKhm0QkNvIipxlSLydlWJgd0XkqKOjjtnl1gO8ERqnqDLfOXkubzun8PaApvUEvoHl/18imf2k8oovntK+ek+LIKKdciFx70F8b9WSOluHSM+CVa3NH6fHlAV7krDT+fJpaVeDG8F7s9B0CcDG91Md77Sz9z7es5koOZo5TGVmVyafkA9O5CQB5GctHOWwL+2oDUjn2H0P7wEYz5/uAgPPzRnKOhtfzW6Bj5ngQjJJBC0+UZPDilpCPRUrT2vJhyP+u8ZKGexOBtQ0+rW1KIzS28DkGSkxLBG6T4SrkhUZITBhgFvFAMNjej8UGOqcBeC+KhsTTtl5ZteItiFk6BSbp4M+odmZL9s4C3G1PBwGIXaHTimu6Boa+MD/H5VRteAUJSTe/hYaoN33uENdNK2281i8SojhPT8GUVnznQ3pU6ULyXeU8H0LrUu0k7pA+WWHGWF6YUuF3m7JB9wmUsnSCJkYIZjogqti+NbALtQKUk1zLMTZmmPz1L5hz+iXQYwhn1e3o1Hv53tuhrm/gjxxQbl5q3iQ="
 aws configure
 
 run unicorn
-uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 http://end-to-end-service-mgmt.s3-website-ap-southeast-2.amazonaws.com/
 
